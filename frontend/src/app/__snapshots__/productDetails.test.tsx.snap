@@ -7,7 +7,12 @@ exports[`ProductDetails tests should render ProductDetails component 1`] = `
   >
     <Breadcrumb>
       <BreadcrumbItem>
-        All Products
+        <a
+          href="#/products"
+          onClick={[Function]}
+        >
+          All Products
+        </a>
       </BreadcrumbItem>
       <BreadcrumbItem
         isActive={true}
