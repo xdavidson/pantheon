@@ -5,7 +5,7 @@ import "isomorphic-fetch"
 import { mount, shallow } from 'enzyme';
 import { Breadcrumb, Button, Form, FormGroup, Level, LevelItem, TextContent, TextInput, Text } from '@patternfly/react-core';
 import renderer from 'react-test-renderer';
-import sinon from 'sinon'
+import sinon from 'sinon';
 
 const props = {
   productName: "Red Hat Enterprise Linux"
@@ -118,4 +118,11 @@ describe('ProductDetails tests', () => {
     wrapper.find(Button).simulate('click');
     sinon.assert.called(spy);
   });
+
+  it('test componentWillReceiveProps function', () => {
+    const wrapper = renderer.create(<ProductDetails {...props} />);
+    const inst = wrapper.getInstance();
+    expect(inst.componentWillReceiveProps({...props})).toMatchSnapshot();
+  });
+  
 });
