@@ -9,7 +9,10 @@ exports[`ProductDetails tests should render ProductDetails component 1`] = `
       <BreadcrumbItem>
         All Products
       </BreadcrumbItem>
-      <BreadcrumbItem>
+      <BreadcrumbItem
+        isActive={true}
+        to="#"
+      >
         Product Details
       </BreadcrumbItem>
     </Breadcrumb>

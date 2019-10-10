@@ -26,7 +26,7 @@ class ProductDetails extends Component<IProps, any> {
                 <div className="app-container">
                     <Breadcrumb>
                         <BreadcrumbItem>All Products</BreadcrumbItem>
-                        <BreadcrumbItem>Product Details</BreadcrumbItem>
+                        <BreadcrumbItem to="#" isActive={true}>Product Details</BreadcrumbItem>
                     </Breadcrumb>
                 </div>
                 <div className="app-container">
