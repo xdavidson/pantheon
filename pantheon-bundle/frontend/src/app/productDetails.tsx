@@ -153,6 +153,7 @@ class ProductDetails extends Component<IProps, IState> {
 
         const urlFragment = this.props.productName.toString().toLowerCase().replace(/[^A-Z0-9]+/ig, "_")
         const encodedVersion = this.state.newVersion.toString().toLowerCase().replace(/[^A-Z0-9]+/ig, "_")
+        formData.append("urlFragment", encodedVersion)
         fetch(encodeURI('/content/products/' + urlFragment + '/versions/' + encodedVersion), {
             body: formData,
             method: 'post',

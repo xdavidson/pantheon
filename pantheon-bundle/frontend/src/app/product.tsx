@@ -116,7 +116,7 @@ class Product extends Component<any, IState> {
                     formData.append("jcr:primaryType", 'pant:product')
                     // currently we don't translate products in Customer Portal.
                     formData.append("locale", "en-US")
-                    formData.append("url", urlFragment)
+                    formData.append("urlFragment", urlFragment)
                     // fetch makes the request to create a new product.
                     // transfor productName to lower case and replace special chars with _.
                     fetch(encodeURI('/content/products/' + urlFragment), {
