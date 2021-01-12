@@ -12,7 +12,6 @@ import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
-import org.apache.sling.resource.filter.ResourceFilterStream;
 import org.apache.sling.servlets.annotations.SlingServletResourceTypes;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
@@ -27,7 +26,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.redhat.pantheon.helper.PantheonConstants.*;
 
@@ -51,21 +49,6 @@ public class SiteMapServlet extends SlingAllMethodsServlet {
     private static final String RESOURCE_ROOT = "/content/repositories";
     private static final String RESOURCE_TYPE_QUERY = "select parent.* from {type} as parent INNER JOIN {version} as child ON ISCHILDNODE(child, parent) WHERE ISDESCENDANTNODE(child,[" + RESOURCE_ROOT + "]) and name(child) = 'released' ORDER BY child.[jcr:lastModified] DESC";
 
-
-    private List<Resource> getAsset(Resource resource, String documentVariantResourceType, String documentVersionResourceType) {
-        log.info("[" + SiteMapServlet.class.getSimpleName() + "] resource type: " + documentVariantResourceType);
-//        String primaryType = documentVariant.getResourceType();
-        // Use Resource Filter Stream to limit memory consumption and path traversal
-        ResourceFilterStream rfs = resource.adaptTo(ResourceFilterStream.class);
-
-        return rfs.setBranchSelector("[jcr:primaryType] == '" + documentVariantResourceType + "'")
-//                .setChildSelector("[jcr:primaryType] == '" + documentVersionResourceType + "'")
-//                .setChildSelector("[released/jcr:primaryType] == $type")
-//                .addParam("type", documentVersionResourceType)
-                .stream()
-                .collect(Collectors.toList());
-    }
-
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
 
@@ -85,10 +68,6 @@ public class SiteMapServlet extends SlingAllMethodsServlet {
             return;
         }
 
-//        List<Resource> documentAssets = getAsset(resource, documentVariantResourceType, documentVersionResourceType);
-        // get assets through traversal
-//        List<Resource> documentAssets = getAssetsThroughTraversal(resource, documentVariantResourceType, documentVariantResourceType);
-//        List<Resource> documentAssets = getAssetsThroughTraversal2(resource, documentVariantResourceType, documentVariantResourceType);
         List<Resource> documentAssets = getAssetsThroughQuery(resource, documentVariantResourceType, documentVersionResourceType);
         if(documentAssets == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -107,7 +86,6 @@ public class SiteMapServlet extends SlingAllMethodsServlet {
             stream.writeNamespace("", SITEMAP_NAMESPACE);
 
             documentAssets.forEach(r -> {
-                log.info("[" + SiteMapServlet.class.getSimpleName() + "] documentAssets r: " + r.getPath());
             try {
                 writeXML(r, stream, request);
             } catch (XMLStreamException e) {
@@ -115,18 +93,6 @@ public class SiteMapServlet extends SlingAllMethodsServlet {
             }
             });
 
-//            for (Resource child : resource.getChildren()) {
-//                if (documentVariantResourceType.equals(child.getResourceType())) {
-//                    Resource documentVersion = child.getChild("released");
-//                    if (documentVersion != null && documentVersionResourceType.equals(documentVersion.getResourceType())) {
-//                        try {
-//                            writeXML(child, stream, request);
-//                        } catch (XMLStreamException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//            }
             stream.writeEndElement();
             stream.writeEndDocument();
 
@@ -137,10 +103,6 @@ public class SiteMapServlet extends SlingAllMethodsServlet {
     private void writeXML(Resource resource, XMLStreamWriter xmlStream, SlingHttpServletRequest slingRequest)
             throws XMLStreamException {
         xmlStream.writeStartElement(SITEMAP_NAMESPACE, URL);
-
-//        String protocolPort = "http";
-//        if (slingRequest.isSecure())
-//            protocolPort = "https";
 
         String locPath = resource.getPath();
         DocumentVariant documentVariant = null;
@@ -184,43 +146,6 @@ public class SiteMapServlet extends SlingAllMethodsServlet {
         xmlStream.writeEndElement();
     }
 
-    private List<Resource> getAssetsThroughTraversal(Resource resource, String documentVariantResourceType, String documentVersionResourceType) {
-        List<Resource> assets = new ArrayList<Resource>();
-        for (Resource child : resource.getChildren()) {
-            log.info("[" + SiteMapServlet.class.getSimpleName() + "] child : " + child.getPath());
-            log.info("[" + SiteMapServlet.class.getSimpleName() + "] child ResourceType : " + child.getResourceType());
-
-            if (documentVariantResourceType.equals(child.getResourceType())) {
-                log.info("[" + SiteMapServlet.class.getSimpleName() + "] child ResourceType : " + child.getResourceType());
-                Resource documentVersion = child.getChild("released");
-                if (documentVersion != null && documentVersionResourceType.equals(documentVersion.getResourceType())) {
-                    assets.add(child);
-                    if (child.getChildren() != null) {
-
-                        assets.addAll(getAssetsThroughTraversal(child, documentVariantResourceType, documentVersionResourceType));
-                    }
-
-                }
-            }
-        }
-        return assets;
-    }
-
-    private List<Resource> getAssetsThroughTraversal2(Resource resource, String documentVariantResourceType, String documentVersionResourceType) {
-        List<Resource> assets = new ArrayList<Resource>();
-        Iterator<Resource> it = resource.listChildren();
-        while (it.hasNext()) {
-            if (!it.next().getResourceType().isEmpty()) {
-            log.info("[" + SiteMapServlet.class.getSimpleName() + "] it.next().getResourceType : " + it.next().getResourceType());
-            if (documentVariantResourceType.equals(it.next().getResourceType())) {
-                assets.add(it.next());
-            }
-        }
-        }
-
-        return assets;
-    }
-
     private List<Resource> getAssetsThroughQuery(Resource resource, String documentVariantResourceType, String documentVersionResourceType) {
         List<Resource> assets = new ArrayList<Resource>();
         String queryStrType = RESOURCE_TYPE_QUERY.replace("{type}","[" + documentVariantResourceType + "]");
@@ -233,19 +158,4 @@ public class SiteMapServlet extends SlingAllMethodsServlet {
         return assets;
     }
 
-//    public static Set<Resource> getNestedComponentTypes(Resource root, boolean inclusive) {
-//
-//        Set<Resource> flattenedResourceTree = flattenResourceTree(root, inclusive);
-//
-//        Set<string> resourceTypeSet = Sets.newHashSet();
-//
-//        for (Resource currentResource : flattenedResourceTree) {
-//            if (currentResource.getResourceType() != null && StringUtils.isNotBlank(currentResource.getResourceType())) {
-//                resourceTypeSet.add(currentResource.getResourceType());
-//            }
-//        }
-//
-//        return resourceTypeSet;
-//
-//    }
 }
